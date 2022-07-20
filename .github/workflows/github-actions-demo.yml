@@ -2,9 +2,19 @@ name: GitHub Actions Demo
 on: [push]
 jobs:
   
-  build:
+  build-scan:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2 # first action : checkout source code
+    - name: docker login
+      run: | # log into docker hub account
+        docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASSWORD }}  
+    - name: Get current date # get the date of the build
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d--%M-%S')"
+    - name: Build the Docker image # push The image to the docker hub
+      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USER }}/lwtest:${{ steps.date.outputs.date }}
+
     - uses: lacework/lw-scanner-action@v1.0.0
       name: Scan container images for vulnerabitilies using Lacework
       with:
@@ -15,3 +25,5 @@ jobs:
         SAVE_RESULTS_IN_LACEWORK: true
         SAVE_BUILD_REPORT: true
         BUILD_REPORT_FILE_NAME: myreport.html
+
+    
